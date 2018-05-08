@@ -16,12 +16,318 @@ let ProductPriceServiceObject = {
   }
 }
 
-function getAvailableLocationsFunction (args) {
+function getAvailableLocationsFunction (args,cb) {
+  if(args.id!=null && args.password!=null){ 
+    commonFunction.isAuthenticate(args).then(function(data){ 
+      if(data.vid) {
+        let body = {"_source":["sku"],"size":0,"aggs":{"imprint_data":{"nested":{"path" :"imprint_data"},"aggs":{"position":{"terms":{"field":"imprint_data.imprint_position.raw"}}}}}};
+        
+        let param = config.customQueryRoute+'?country='+args.localizationCountry+'&language='+args.localizationLanguage;
+        
+        if ((args.localizationCountry == null) || (args.localizationLanguage == null) || (args.productId == null)) {
+          return cb(commonFunction.validationError('120','The following field(s) are required [productId,localizationCountry,localizationLanguage]'));
+        }
+        else if ("productId" in args) {
+          body.query={"match_phrase":{"sku":args.productId}}
+        }
+        axios({
+          method: 'POST',
+          url: config.pdmurl + param,
+          headers: {'vid': data.vid,'Content-Type':'application/json'},
+          data : body
+        })
+        .then(function (response) {
+          if(response.status === 200) {
+            let data = response.data.aggregations;
+            
+            let getAvailableLocations = data.imprint_data.position.buckets[0].key;
+            let getAvailableLocationsArray = getAvailableLocations.split('|')
+            
+            // console.log("getAvailableLocationsArray",getAvailableLocationsArray)
+            // var obj = _.extend({ 'location': 0 }, getAvailableLocations.split('|'));
+            
+            let locationList = [];
+            let result = [];
+
+            if(getAvailableLocationsArray.length > 0)
+            {
+              for (var i = 0; i < getAvailableLocationsArray.length; i++){ 
+                locationList.push({'location':getAvailableLocationsArray[i]});
+              }
   
+              // let locationList = [{"location":"CSK"},{"location":"ff662"}];
+  
+              axios({
+                method : 'POST',
+                url : config.domainKey+'promoStandardLocation',
+                data: locationList
+              })
+              .then(function (response) {
+                  let locationData = [];
+  
+                  for (var i = 0; i < response.data.length; i++){ 
+                    let locationList = {};
+                      
+                    locationList = { 
+                      'locationName':response.data[i].location,
+                      'locationId':response.data[i].location_id
+                    }
+                    locationData.push(locationList)
+                  }
+                  
+                  let result = {'AvailableLocation' :locationData}
+                  cb({
+                    'AvailableLocationArray':result
+                  })
+                })
+                .catch(function (error) {
+                  console.log("error",error)
+                });
+            }
+            else{
+              cb({
+                'AvailableLocationArray':result
+              })
+            }
+          }
+        })
+        .catch(function (error) {
+          cb(commonFunction.validationError('500',error));
+        });
+      }
+      else {
+        cb(commonFunction.validationError('105',data.error));
+      }
+    });
+  }
+  else {
+    cb(commonFunction.validationError('110','Authentication Credentials required'));
+  }  
 }
 
-function getDecorationColorsFunction (args) {
-  
+async function getDecorationMethods(args,cb,vid,param) {
+  var finalDecorationMethodArray = null;
+
+  if ("decorationId" in args) {
+    await axios({
+      method : 'GET',
+      url : config.domainKey+'promoStandardDecorationMethod?method_id='+args.decorationId
+    })
+    .then(async function (response) {
+        if(response.data.total>0)
+        {
+          let availableDecorationMethods =  await checkDecorationIdExistInProduct(args,cb,vid,param);
+          // console.log('availableDecorationMethods',availableDecorationMethods.DecorationMethod)
+
+          let getExistingMethod = _.find(availableDecorationMethods.DecorationMethod, { 'decorationId': args.decorationId });
+
+          if(typeof getExistingMethod === typeof undefined)
+          {
+            cb(commonFunction.validationError('500','Invalid decoratioId'));
+          }
+          
+          // console.log('getExistingMethod',typeof getExistingMethod)
+
+          
+          let productData = response.data.data;
+
+          let methodData = [];
+
+          for (var i = 0; i < productData.length; i++){ 
+            methodData.push({'decorationName':productData[i].name,'decorationId':productData[i].method_id});
+          }
+          return finalDecorationMethodArray = {'DecorationMethod':methodData};
+        }
+        else{
+          cb(commonFunction.validationError('500','Invalid decoratioId')); 
+        }
+    })
+    .catch(function (error) {
+      cb(commonFunction.validationError('500',error));
+    });
+  }
+  else{
+    return finalDecorationMethodArray = await checkDecorationIdExistInProduct(args,cb,vid,param)
+  }
+  return finalDecorationMethodArray;
+}
+
+async function checkDecorationIdExistInProduct(args,cb,vid,param) {
+  var finalDecorationMethodArray = '';
+
+  let decorationMethodQuery = {"_source":["sku"],"size":0,"aggs":{"imprint_data":{"nested":{"path":"imprint_data"},"aggs":{"position":{"terms":{"field":"imprint_data.imprint_method.raw"}}}}}}
+
+    if ("productId" in args) {
+      decorationMethodQuery.query={"match_phrase":{"sku":args.productId}}
+    }
+    await axios({
+      method: 'POST',
+      url: config.pdmurl + param,
+      headers: {'vid': vid,'Content-Type':'application/json'},
+      data : decorationMethodQuery
+    })
+    .then(async function (response) {
+      if(response.status === 200) {
+        let data = response.data.aggregations;
+        let getMethodsArray = data.imprint_data.position.buckets;
+        let methodList = [];
+        let methodData = [];
+        
+        if(getMethodsArray.length > 0)
+        {
+          for (var i = 0; i < getMethodsArray.length; i++){ 
+            methodList.push({'name':getMethodsArray[i].key});
+          }
+          // methodList = [{"name":"2_side"},{"name":"1_side"}];
+          
+          await axios({
+            method : 'POST',
+            url : config.domainKey+'promoStandardDecorationMethod',
+            data: methodList
+          })
+          .then(function (response) {
+            for (var i = 0; i < response.data.length; i++){ 
+              let methodList = {};
+                
+              methodList = { 
+                'decorationId':response.data[i].method_id,
+                'decorationName':response.data[i].name
+              }
+              methodData.push(methodList)
+            }
+            return finalDecorationMethodArray = {'DecorationMethod':methodData};          
+          })
+          .catch(function (error) {
+            cb(commonFunction.validationError('500',error));
+          });
+        }
+        else{
+          return finalDecorationMethodArray = {'DecorationMethod':methodData};                    
+        }
+      }
+    })
+    .catch(function (error) {
+      cb(commonFunction.validationError('500',error));
+    });
+    return finalDecorationMethodArray;
+}
+
+function getDecorationColorsFunction (args,cb) {
+  if(args.id!=null && args.password!=null){ 
+    commonFunction.isAuthenticate(args).then(function(data){ 
+      if(data.vid) {
+        let vid = data.vid;
+        let body = {"_source":["sku","imprint_data.full_color","imprint_data.is_pms_color_allow"],"size": 1,"aggs":{"imprint_data":{"terms":{"field":"attributes.colors"}}}};
+        
+        let param = config.customQueryRoute+'?country='+args.localizationCountry+'&language='+args.localizationLanguage;
+        
+        if ((args.localizationCountry == null) || (args.localizationLanguage == null) || (args.locationId == null) || (args.productId == null)) {
+          return cb(commonFunction.validationError('120','The following field(s) are required [localizationCountry,localizationLanguage,locationId,productId]'));
+        }
+        else if ("productId" in args) {
+          body.query={"match_phrase":{"sku":args.productId}}
+        }
+
+        axios({
+          method: 'POST',
+          url: config.pdmurl + param,
+          headers: {'vid': data.vid,'Content-Type':'application/json'},
+          data : body
+        })
+        .then(function (response) {
+          // console.log("data response------------------------",response.data)
+          
+          if(response.status === 200) {
+            let productData = response.data.hits.hits[0]._source;
+            let data = response.data.aggregations;
+
+            let isPMSColor = productData.imprint_data[0].is_pms_color_allow;
+            let isFullColor = productData.imprint_data[0].full_color;
+
+            // console.log("data------------------------",data)
+
+            let getAvailableColorsArray = data.imprint_data.buckets;
+            // console.log("getAvailableColorsArray",getAvailableColorsArray)
+            
+            let decorationMethods = '';
+            let finalDecorationMethodArray= '';            
+            axios({
+              method : 'GET',
+              url : config.domainKey+'promoStandardLocation?location_id='+args.locationId
+            })
+            .then(async function (response) {
+                // console.log("promoStandardLocation------------------------",response.data)
+
+                if(response.data.total>0)
+                {
+                  //decorationId
+                  let finalDecorationMethodArray = await getDecorationMethods(args,cb,vid,param)
+                  
+                  // console.log("finalDecorationMethodArray-------",finalDecorationMethodArray)
+                  //END - decorationId
+                  // let colorList = [{"name":"Red"},{"name":"White"}];
+                  let colorList = [];
+
+                  for (var i = 0; i < getAvailableColorsArray.length; i++){ 
+                    colorList.push({'name':getAvailableColorsArray[i].key});
+                  }
+
+                  // console.log("colorList",colorList)
+
+                  axios({
+                    method : 'POST',
+                    url : config.domainKey+'promoStandardColors',
+                    data: colorList
+                  })
+                  .then(function (response) {
+                    // console.log("colorList------------------------",response.data)
+
+                    let colorData = [];
+
+                    for (var i = 0; i < response.data.length; i++){ 
+                      let colorList = {};
+                        
+                      colorList = { 
+                        'colorId':response.data[i].color_id,
+                        'colorName':response.data[i].name
+                      }
+                      colorData.push(colorList)
+                    }
+                    // console.log("colorData------------------------",colorData)
+                    let finalColorArray = {'Color':colorData};
+
+
+                    let result = {'ColorArray' :finalColorArray, productId:args.productId,locationId:args.locationId, 'DecorationMethodArray':finalDecorationMethodArray,'pmsMatch':isPMSColor, 'fullColor':isFullColor}
+                    cb({
+                      'DecorationColors':result
+                    })
+                  })
+                  .catch(function (error) {
+                    cb(commonFunction.validationError('500',error));
+                  });
+
+                }
+                else{
+                  cb(commonFunction.validationError('500','Invalid location ID'));
+                }
+              })
+              .catch(function (error) {
+                console.log("error",error)
+              });
+          }
+        })
+        .catch(function (error) {
+          cb(commonFunction.validationError('500',error));
+        });
+      }
+      else {
+        cb(commonFunction.validationError('105',data.error));
+      }
+    });
+  }
+  else {
+    cb(commonFunction.validationError('110','Authentication Credentials required'));
+  }  
 }
 
 
@@ -29,20 +335,21 @@ function getFobPointsFunction (args,cb) {
   if(args.id!=null && args.password!=null){ 
     commonFunction.isAuthenticate(args).then(function(data){ 
       if(data.vid) {
+        let body = {"size":0,"aggs":{"fobID":{"terms":{"field":"shipping.fob_zip_code"},"aggs":{"fobCity":{"terms":{"field":"shipping.fob_city"},"aggs":{"fob_state_code":{"terms":{"field":"shipping.fob_state_code"},"aggs":{"fob_zip_code":{"terms":{"field":"shipping.fob_zip_code"},"aggs":{"fob_country_code":{"terms":{"field":"shipping.fob_country_code"},"aggs":{"currency":{"terms":{"field":"currency"}},"products":{"top_hits":{"_source":["sku"],"size":10000}}}}}}}}}}}}}};
         let param = config.customQueryRoute+'?country='+args.localizationCountry+'&language='+args.localizationLanguage;
         if ((args.localizationCountry == null) || (args.localizationLanguage == null)) {
           return cb(commonFunction.validationError('120','The following field(s) are required [localizationCountry,localizationLanguage]'));
         }
         else if ("productId" in args) {
           body.query={"match_phrase":{"sku":args.productId}}
+          // param += "&sku="+ args.productId;
         }
-        // console.log('param', config.pdmurl + param);
         //let vid ='054364d4-3a0b-436a-8144-04cbffb0587d'
         axios({
           method: 'POST',
           url: config.pdmurl + param,
           headers: {'vid': data.vid,'Content-Type':'application/json'},
-          data : {"size":0,"aggs":{"fobID":{"terms":{"field":"shipping.fob_zip_code"},"aggs":{"fobCity":{"terms":{"field":"shipping.fob_city"},"aggs":{"fob_state_code":{"terms":{"field":"shipping.fob_state_code"},"aggs":{"fob_zip_code":{"terms":{"field":"shipping.fob_zip_code"},"aggs":{"fob_country_code":{"terms":{"field":"shipping.fob_country_code"},"aggs":{"currency":{"terms":{"field":"currency"}},"products":{"top_hits":{"_source":["sku"],"size":10000}}}}}}}}}}}}}}
+          data : body
         })
         .then(function (response) {
           if(response.status === 200) {
@@ -69,7 +376,7 @@ function getFobPointsFunction (args,cb) {
                       // console.log('fobIDBucket',fobId);
                     _.forEach(fobIDBucket.fobCity.buckets, function(fobCityBucket) {
                         fobCity = fobCityBucket.key;
-                        // console.log('fobCityBucket',fobCity);
+                        console.log('fobCityBucket',fobCity);
                       _.forEach(fobCityBucket.fob_state_code.buckets, function(fobStateCodeBucket) {
                           fobStateCode = fobStateCodeBucket.key;
                           // console.log('fobStateCodeBucket',fobStateCode);
@@ -136,8 +443,79 @@ function getFobPointsFunction (args,cb) {
   }      
 }
 
-function getAvailableChargesFunction (args) {
-  
+function getAvailableChargesFunction (args,cb) {
+  if(args.id!=null && args.password!=null){ 
+    commonFunction.isAuthenticate(args).then(function(data){ 
+      console.log("data.vid",data.vid)
+      if(data.vid) {
+        let body = {"_source":["sku"],"size":0,"aggs":{"imprint_data":{"nested":{"path" :"imprint_data"},"aggs":{"position":{"terms":{"field":"imprint_data.imprint_position.raw"}}}}}};
+        
+        let param = config.customQueryRoute+'?country='+args.localizationCountry+'&language='+args.localizationLanguage;
+        
+        if ((args.localizationCountry == null) || (args.localizationLanguage == null)) {
+          return cb(commonFunction.validationError('120','The following field(s) are required [localizationCountry,localizationLanguage]'));
+        }
+        else if ("productId" in args) {
+          body.query={"match_phrase":{"sku":args.productId}}
+          // param += "&sku="+ args.productId;
+        }
+        //let vid ='054364d4-3a0b-436a-8144-04cbffb0587d'
+        axios({
+          method: 'POST',
+          url: config.pdmurl + param,
+          headers: {'vid': data.vid,'Content-Type':'application/json'},
+          data : body
+        })
+        .then(function (response) {
+          if(response.status === 200) {
+            let data = response.data.aggregations;
+            // console.log("data",data.imprint_data.position)
+            let chargeList = [{"charge":"Setup"},{"charge":"Run"}];
+
+            axios({
+              method : 'POST',
+              url : config.domainKey+'promoStandardCharges',
+              data: chargeList
+            })
+            .then(function (response) {
+                // console.log("response------------------------",response.data)
+                let chargeData = [];
+
+                for (var i = 0; i < response.data.length; i++){ 
+                  let chargeList = {};
+                    
+                  chargeList = { 
+                    'chargeName':response.data[i].charge,
+                    'chargeId':response.data[i].charge_id,
+                    'chargeDescription':response.data[i].chargeDescription,
+                    'chargeType':response.data[i].chargeType
+                  }
+                  chargeData.push(chargeList)
+                }
+                // console.log("chargeData------------------------",chargeData)
+                
+                let result = {'AvailableCharge' :chargeData}
+                cb({
+                  'AvailableChargeArray':result
+                })
+              })
+              .catch(function (error) {
+                console.log("error",error)
+              });
+          }
+        })
+        .catch(function (error) {
+          cb(commonFunction.validationError('500',error));
+        });
+      }
+      else {
+        cb(commonFunction.validationError('105',data.error));
+      }
+    });
+  }
+  else {
+    cb(commonFunction.validationError('110','Authentication Credentials required'));
+  }  
 }
 
 function getConfigurationAndPricingFunction (args,cb) {
@@ -147,8 +525,12 @@ function getConfigurationAndPricingFunction (args,cb) {
       
       if(data.vid) {
         let param = config.customQueryRoute+'?country='+args.localizationCountry+'&language='+args.localizationLanguage;
-        // console.log('URL',config.pdmurl + param)
-        let vid = '054364d4-3a0b-436a-8144-04cbffb0587d';
+        
+        if(args.configurationType == "Decorated")
+        {
+          args.configurationType = "Decorative";
+        }
+        let vid = data.vid;//'054364d4-3a0b-436a-8144-04cbffb0587d';
         
         if ((args.localizationCountry == null)) {
           return cb(commonFunction.validationError('120','The following field(s) are required localizationCountry'));
@@ -177,7 +559,7 @@ function getConfigurationAndPricingFunction (args,cb) {
             method: 'POST',
             url: config.pdmurl + param,
             headers: {'vid': vid,'Content-Type':'application/json'},
-            data : {"query":{"bool":{"must":[{"match_phrase":{"shipping.fob_zip_code":args.fobId}},{"match_phrase":{"sku":args.productId}},{"match_phrase":{"pricing.type":args.configurationType}},{"match_phrase":{"currency":args.currency}}]}},"_source":["pricing","description"]}
+            data : {"query":{"bool":{"must":[{"match_phrase":{"shipping.fob_zip_code":args.fobId}},{"match_phrase":{"sku":args.productId}},{"match_phrase":{"pricing.type":args.configurationType}},{"match_phrase":{"currency":args.currency}}]}},"_source":["pricing","description","valid_up_to"]}
           })
           .then(function (response) {
             if(response.status == 200) {
@@ -186,10 +568,12 @@ function getConfigurationAndPricingFunction (args,cb) {
               let PartArrayResult = '';
               let result = '';
               let currency = '';
+              let FobArray = '';
               let ProductSku ='';
 
               let data = response.data.hits.hits[0]._source;
               let description = data.description;
+              // console.log('data',data)
               if(data.pricing!=undefined){
                 _.forEach(data.pricing, function(pricingData) {
                   let PriceUnit = pricingData.price_unit;
@@ -197,31 +581,29 @@ function getConfigurationAndPricingFunction (args,cb) {
                   ProductSku = pricingData.sku;
                   PriceRange = _.map(pricingData.price_range, function(p) {
                     return { 
-                      'PartPrice' : {
                         'minQuantity':p.qty.gte,
                         'price':p.price,
                         'discountCode':p.code,
                         'priceUom': PriceUnit, 
                         'priceEffectiveDate' :'2018-01-01T00:00:00', // Right now not getting date from elaticsearch api
-                        'priceExpiryDate': '2018-01-01T00:00:00' // Right now not getting date from elaticsearch api
+                        'priceExpiryDate': '2018-01-01T00:00:00' //data.valid_up_to // Right now not getting date from elaticsearch api
                       }
-                    }
                   });
-
-                  PartArrayResult =  {
-                    'part' : { 
-                      "partId": pricingData.sku, 
-                      'partDescription': description,
-                      'PartPriceArray': PriceRange
-                    }
-                  }
                 });
-
+                PartArrayResult =  {
+                  'part' : { 
+                    "partId": ProductSku, 
+                    'partDescription': description,
+                    'PartPriceArray': {'PartPrice' :PriceRange}
+                  }
+                }
+                
                 let result = {
                   'PartArray':PartArrayResult,
                   'LocationArray':'',
                   'productId': ProductSku,
                   'currency': currency,
+                  'FobArray': FobArray,
                   'fobPostalCode':''
                 }
                 cb({

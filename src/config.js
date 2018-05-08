@@ -10,7 +10,8 @@ const config = {
   pdmurl : "http://api.flowzcluster.tk/pdmnew/pdm",
   authroute: "http://api.flowzcluster.tk/pdmnew/promostandard-auth",
   mediaUrl: "http://api.flowzcluster.tk/",
-  customQueryRoute: '/run/fullquery'
+  customQueryRoute: '/run/fullquery',
+  domainKey: 'http://localhost:3032/'
 };
 module.exports = config;
 
