@@ -442,21 +442,22 @@ function getFobPointsFunction (args,cb) {
     cb(commonFunction.validationError('110','Authentication Credentials required'));
   }      
 }
-
+  
 function getAvailableChargesFunction (args,cb) {
   if(args.id!=null && args.password!=null){ 
     commonFunction.isAuthenticate(args).then(function(data){ 
       console.log("data.vid",data.vid)
       if(data.vid) {
-        let body = {"_source":["sku"],"size":0,"aggs":{"imprint_data":{"nested":{"path" :"imprint_data"},"aggs":{"position":{"terms":{"field":"imprint_data.imprint_position.raw"}}}}}};
-        
+        // let body = {"_source":["sku"],"size":0,"aggs":{"imprint_data":{"nested":{"path" :"imprint_data"},"aggs":{"position":{"terms":{"field":"imprint_data.imprint_position.raw"}}}}}};
+        // let body = {"query":{"match":{"sku":"68420"}},"_source":"imprint_data"};
+        let body = '';
         let param = config.customQueryRoute+'?country='+args.localizationCountry+'&language='+args.localizationLanguage;
         
         if ((args.localizationCountry == null) || (args.localizationLanguage == null)) {
           return cb(commonFunction.validationError('120','The following field(s) are required [localizationCountry,localizationLanguage]'));
         }
-        else if ("productId" in args) {
-          body.query={"match_phrase":{"sku":args.productId}}
+        if ("productId" in args) {
+          body.query = {"match_phrase":{"sku":args.productId}};
           // param += "&sku="+ args.productId;
         }
         //let vid ='054364d4-3a0b-436a-8144-04cbffb0587d'
@@ -466,9 +467,10 @@ function getAvailableChargesFunction (args,cb) {
           headers: {'vid': data.vid,'Content-Type':'application/json'},
           data : body
         })
-        .then(function (response) {
-          if(response.status === 200) {
-            let data = response.data.aggregations;
+        .then(function (resp) {
+          if(resp.status === 200) {
+            // console.log('response:: ', JSON.stringify(response.data));
+            // let data = response.data.aggregations;
             // console.log("data",data.imprint_data.position)
             let chargeList = [{"charge":"Setup"},{"charge":"Run"}];
 
@@ -480,17 +482,40 @@ function getAvailableChargesFunction (args,cb) {
             .then(function (response) {
                 // console.log("response------------------------",response.data)
                 let chargeData = [];
-
-                for (var i = 0; i < response.data.length; i++){ 
-                  let chargeList = {};
-                    
-                  chargeList = { 
-                    'chargeName':response.data[i].charge,
-                    'chargeId':response.data[i].charge_id,
-                    'chargeDescription':response.data[i].chargeDescription,
-                    'chargeType':response.data[i].chargeType
+                if ("productId" in args) {
+                  let charge = [];
+                  for (let item of resp.data.hits.hits[0]._source.imprint_data) {
+                    if (item.hasOwnProperty('setup_charge')) {
+                      charge.push('Setup');
+                    }
+                    if (item.hasOwnProperty('run_charge')) {
+                      charge.push('Run');
+                    }
                   }
-                  chargeData.push(chargeList)
+                  charge = _.uniq(charge);
+
+                  for (let result of charge) {
+                    let finx = _.findIndex(response.data, {charge: result});
+                    chargeData.push({
+                      'chargeName':response.data[finx].charge,
+                      'chargeId':response.data[finx].charge_id,
+                      'chargeDescription':response.data[finx].chargeDescription,
+                      'chargeType':response.data[finx].chargeType
+                    }) 
+                  }
+
+                } else {
+                  for (let i = 0; i < response.data.length; i++){ 
+                    let chargeList = {};
+                      
+                    chargeList = { 
+                      'chargeName':response.data[i].charge,
+                      'chargeId':response.data[i].charge_id,
+                      'chargeDescription':response.data[i].chargeDescription,
+                      'chargeType':response.data[i].chargeType
+                    }
+                    chargeData.push(chargeList)
+                  }
                 }
                 // console.log("chargeData------------------------",chargeData)
                 
@@ -625,45 +650,26 @@ function getConfigurationAndPricingFunction (args,cb) {
 
                           let DecorationArrayResult = [];
                           let ChargeArrayResult = [];
+                          
+                          if (item.hasOwnProperty('setup_charge')) {
+                            await axios({
+                              method: 'GET',
+                              url: config.domainKey+'promoStandardCharges' + '?charge=Setup' 
+                            }).then(async respp => {
+                              
+                              let charge = item.setup_charge
+                              let dcode = ''
+                              let str = charge.split('(');
+                              charge = str[0];
+                              dcode = str[1].replace(')', '');
 
-                          await axios({
-                            method: 'GET',
-                            url: config.domainKey+'promoStandardCharges' + '?charge=Setup' 
-                          }).then(async respp => {
-                            
-                            let charge = item.setup_charge
-                            let dcode = ''
-                            let str = charge.split('(');
-                            charge = str[0];
-                            dcode = str[1].replace(')', '');
+                              if (respp.data.data.length > 0) {
 
-                            if (respp.data.data.length > 0) {
-
-                              ChargeArrayResult.push({
-                                chargeId: respp.data.data[0].charge_id,
-                                chargeName: respp.data.data[0].charge,
-                                chargeType: respp.data.data[0].charge,
-                                chargeDescription: respp.data.data[0].charge,
-                                ChargePriceArray: [{
-                                  xMinQty: '',
-                                  xUom: '',
-                                  yMinQty: '',
-                                  yUom: '',
-                                  price: charge,
-                                  discountCode: dcode
-                                }]
-                              })
-                            } else {
-                              await axios({
-                                method: 'POST',
-                                url: config.domainKey+'promoStandardCharges',
-                                data: [{ name: Setup }]
-                              }).then(rpp => {
                                 ChargeArrayResult.push({
-                                  chargeId: rpp.data[0].charge_id,
-                                  chargeName: rpp.data[0].charge,
-                                  chargeType: rpp.data[0].charge,
-                                  chargeDescription: rpp.data[0].charge,
+                                  chargeId: respp.data.data[0].charge_id,
+                                  chargeName: respp.data.data[0].charge,
+                                  chargeType: respp.data.data[0].charge,
+                                  chargeDescription: respp.data.data[0].charge,
                                   ChargePriceArray: [{
                                     xMinQty: '',
                                     xUom: '',
@@ -673,9 +679,83 @@ function getConfigurationAndPricingFunction (args,cb) {
                                     discountCode: dcode
                                   }]
                                 })
-                              })
-                            }
-                          })
+                              } else {
+                                await axios({
+                                  method: 'POST',
+                                  url: config.domainKey+'promoStandardCharges',
+                                  data: [{ name: 'Setup' }]
+                                }).then(rpp => {
+                                  ChargeArrayResult.push({
+                                    chargeId: rpp.data[0].charge_id,
+                                    chargeName: rpp.data[0].charge,
+                                    chargeType: rpp.data[0].charge,
+                                    chargeDescription: rpp.data[0].charge,
+                                    ChargePriceArray: [{
+                                      xMinQty: '',
+                                      xUom: '',
+                                      yMinQty: '',
+                                      yUom: '',
+                                      price: charge,
+                                      discountCode: dcode
+                                    }]
+                                  })
+                                })
+                              }
+                            })
+                          }
+
+                          if (item.hasOwnProperty('run_charge')) {
+                            await axios({
+                              method: 'GET',
+                              url: config.domainKey+'promoStandardCharges' + '?charge=Run' 
+                            }).then(async respp => {
+                              
+                              let charge = item.run_charge
+                              let dcode = ''
+                              let str = charge.split('(');
+                              charge = str[0];
+                              dcode = str[1].replace(')', '');
+
+                              if (respp.data.data.length > 0) {
+
+                                ChargeArrayResult.push({
+                                  chargeId: respp.data.data[0].charge_id,
+                                  chargeName: respp.data.data[0].charge,
+                                  chargeType: respp.data.data[0].charge,
+                                  chargeDescription: respp.data.data[0].charge,
+                                  ChargePriceArray: [{
+                                    xMinQty: '',
+                                    xUom: '',
+                                    yMinQty: '',
+                                    yUom: '',
+                                    price: charge,
+                                    discountCode: dcode
+                                  }]
+                                })
+                              } else {
+                                await axios({
+                                  method: 'POST',
+                                  url: config.domainKey+'promoStandardCharges',
+                                  data: [{ name: 'Run' }]
+                                }).then(rpp => {
+                                  ChargeArrayResult.push({
+                                    chargeId: rpp.data[0].charge_id,
+                                    chargeName: rpp.data[0].charge,
+                                    chargeType: rpp.data[0].charge,
+                                    chargeDescription: rpp.data[0].charge,
+                                    ChargePriceArray: [{
+                                      xMinQty: '',
+                                      xUom: '',
+                                      yMinQty: '',
+                                      yUom: '',
+                                      price: charge,
+                                      discountCode: dcode
+                                    }]
+                                  })
+                                })
+                              }
+                            })
+                          }
 
                           await axios({
                             method: 'GET',
