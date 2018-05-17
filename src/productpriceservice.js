@@ -559,9 +559,9 @@ function getConfigurationAndPricingFunction (args,cb) {
             method: 'POST',
             url: config.pdmurl + param,
             headers: {'vid': vid,'Content-Type':'application/json'},
-            data : {"query":{"bool":{"must":[{"match_phrase":{"shipping.fob_zip_code":args.fobId}},{"match_phrase":{"sku":args.productId}},{"match_phrase":{"pricing.type":args.configurationType}},{"match_phrase":{"currency":args.currency}}]}},"_source":["pricing","description","valid_up_to"]}
+            data : {"query":{"bool":{"must":[{"match_phrase":{"shipping.fob_zip_code":args.fobId}},{"match_phrase":{"sku":args.productId}},{"match_phrase":{"pricing.type":args.configurationType}},{"match_phrase":{"currency":args.currency}}]}},"_source":["pricing","description","valid_up_to", "shipping", "imprint_data"]}
           })
-          .then(function (response) {
+          .then(async function (response) {
             if(response.status == 200) {
               let Partresult = '';
               let PriceRange = '';
@@ -570,6 +570,7 @@ function getConfigurationAndPricingFunction (args,cb) {
               let currency = '';
               let FobArray = '';
               let ProductSku ='';
+              let LocationArray = '';
 
               let data = response.data.hits.hits[0]._source;
               let description = data.description;
@@ -586,7 +587,8 @@ function getConfigurationAndPricingFunction (args,cb) {
                         'discountCode':p.code,
                         'priceUom': PriceUnit, 
                         'priceEffectiveDate' :'2018-01-01T00:00:00', // Right now not getting date from elaticsearch api
-                        'priceExpiryDate': '2018-01-01T00:00:00' //data.valid_up_to // Right now not getting date from elaticsearch api
+                        // 'priceExpiryDate': '2018-01-01T00:00:00' //data.valid_up_to // Right now not getting date from elaticsearch api
+                        'priceExpiryDate': data.valid_up_to
                       }
                   });
                 });
@@ -597,14 +599,146 @@ function getConfigurationAndPricingFunction (args,cb) {
                     'PartPriceArray': {'PartPrice' :PriceRange}
                   }
                 }
-                
+
+                if (data.shipping != undefined) {
+                  FobArray = [];
+                  FobArray = _.map(data.shipping, function(f) {
+                    return {
+                      fobId: f.fob_zip_code,
+                      fobPostalCode: f.free_on_board
+                    }
+                  })
+                }
+
+                if (data.imprint_data != undefined) {
+                  LocationArray = []
+                  for (let item of data.imprint_data) {
+                    let position = item.imprint_position;
+                    position = position.split('|');
+
+                    for(let pos of position) {
+                      await axios({
+                        method : 'GET',
+                        url : config.domainKey+'promoStandardLocation' + '?location=' + pos
+                      }).then(async res => {
+                        if (res.data.data.length > 0) {
+
+                          let DecorationArrayResult = [];
+                          let ChargeArrayResult = [];
+
+                          await axios({
+                            method: 'GET',
+                            url: config.domainKey+'promoStandardCharges' + '?charge=Setup' 
+                          }).then(async respp => {
+                            
+                            let charge = item.setup_charge
+                            let dcode = ''
+                            let str = charge.split('(');
+                            charge = str[0];
+                            dcode = str[1].replace(')', '');
+
+                            if (respp.data.data.length > 0) {
+
+                              ChargeArrayResult.push({
+                                chargeId: respp.data.data[0].charge_id,
+                                chargeName: respp.data.data[0].charge,
+                                chargeType: respp.data.data[0].charge,
+                                chargeDescription: respp.data.data[0].charge,
+                                ChargePriceArray: [{
+                                  xMinQty: '',
+                                  xUom: '',
+                                  yMinQty: '',
+                                  yUom: '',
+                                  price: charge,
+                                  discountCode: dcode
+                                }]
+                              })
+                            } else {
+                              await axios({
+                                method: 'POST',
+                                url: config.domainKey+'promoStandardCharges',
+                                data: [{ name: Setup }]
+                              }).then(rpp => {
+                                ChargeArrayResult.push({
+                                  chargeId: rpp.data[0].charge_id,
+                                  chargeName: rpp.data[0].charge,
+                                  chargeType: rpp.data[0].charge,
+                                  chargeDescription: rpp.data[0].charge,
+                                  ChargePriceArray: [{
+                                    xMinQty: '',
+                                    xUom: '',
+                                    yMinQty: '',
+                                    yUom: '',
+                                    price: charge,
+                                    discountCode: dcode
+                                  }]
+                                })
+                              })
+                            }
+                          })
+
+                          await axios({
+                            method: 'GET',
+                            url: config.domainKey+'promoStandardDecorationMethod' + '?name=' + item.imprint_method
+                          }).then(async respp => {
+                            if (respp.data.data.length > 0) {
+                              DecorationArrayResult.push({
+                                decorationId: respp.data.data[0].method_id,
+                                decorationName: respp.data.data[0].name,
+                                decorationGeometry: 'Other',
+                                ChargeArray: ChargeArrayResult
+                              })
+                            } else {
+                              await axios({
+                                method: 'POST',
+                                url: config.domainKey+'promoStandardDecorationMethod',
+                                data: [{ name: item.imprint_method }]
+                              }).then(rpp => {
+                                DecorationArrayResult.push({
+                                  decorationId: rpp.data[0].method_id,
+                                  decorationName: rpp.data[0].name,
+                                  decorationGeometry: 'Other',
+                                  ChargeArray: ChargeArrayResult
+                                })
+                              })
+                            }
+                          })
+
+                          LocationArray.push({
+                            locationId : res.data.data[0].location_id,
+                            locationName : res.data.data[0].location,
+                            DecorationArray: DecorationArrayResult,
+                            maxDecoration: item.max_location_allowed
+                            // minDecoration: 1,
+                            // decorationsIncluded: 1,
+                            // defaultLocation: true
+                          });
+                        } else {
+                          await axios({
+                            method: 'POST',
+                            url: config.domainKey+'promoStandardLocation',
+                            data: [{location: pos}]
+                          }).then(resp => {
+                            // console.log('POST ::', resp.data[0].location_id)
+                            LocationArray.push({
+                              locationId: resp.data[0].location_id, 
+                              locationName: pos
+                            });
+                          })
+                        }
+                      })
+                    }
+                  }
+                  console.log('LocationArray :: ', LocationArray);
+                }
+
                 let result = {
                   'PartArray':PartArrayResult,
-                  'LocationArray':'',
+                  'LocationArray': LocationArray,
                   'productId': ProductSku,
                   'currency': currency,
-                  'FobArray': FobArray,
-                  'fobPostalCode':''
+                  'FobArray': FobArray
+                  // 'fobPostalCode':''
                 }
                 cb({
                   'Configuration':result
