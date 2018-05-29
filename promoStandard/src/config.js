@@ -1,4 +1,5 @@
-const config = {
+// console.log(process.env.serviceUrl)
+let config = {
   dirup: '../',
   port:8000,
   productdatawsdlPath: "wsdl/ProductData",
@@ -11,8 +12,11 @@ const config = {
   authroute: "http://api.flowzcluster.tk/pdmnew/promostandard-auth",
   mediaUrl: "http://api.flowzcluster.tk/",
   customQueryRoute: '/run/fullquery',
-  domainKey: 'http://localhost:3032/'
+  serviceUrl: 'http://localhost:3080'
 };
+if (process.env.serviceUrl != undefined) {
+  config.serviceUrl = process.env.serviceUrl;
+}
 module.exports = config;
 
 

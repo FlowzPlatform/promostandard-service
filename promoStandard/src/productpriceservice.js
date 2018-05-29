@@ -20,6 +20,7 @@ function getAvailableLocationsFunction (args,cb) {
   if(args.id!=null && args.password!=null){ 
     commonFunction.isAuthenticate(args).then(function(data){ 
       if(data.vid) {
+        console.log('------> vid', data.vid)
         let body = {"_source":["sku"],"size":0,"aggs":{"imprint_data":{"nested":{"path" :"imprint_data"},"aggs":{"position":{"terms":{"field":"imprint_data.imprint_position.raw"}}}}}};
         
         let param = config.customQueryRoute+'?country='+args.localizationCountry+'&language='+args.localizationLanguage;
@@ -38,6 +39,7 @@ function getAvailableLocationsFunction (args,cb) {
         })
         .then(function (response) {
           if(response.status === 200) {
+            // console.log(response.data.aggregations)
             let data = response.data.aggregations;
             
             let getAvailableLocations = data.imprint_data.position.buckets[0].key;
@@ -56,10 +58,10 @@ function getAvailableLocationsFunction (args,cb) {
               }
   
               // let locationList = [{"location":"CSK"},{"location":"ff662"}];
-  
+              console.log( config.serviceUrl+'/promoStandardLocation')
               axios({
                 method : 'POST',
-                url : config.domainKey+'promoStandardLocation',
+                url : config.serviceUrl+'/promoStandardLocation',
                 data: locationList
               })
               .then(function (response) {
@@ -111,7 +113,7 @@ async function getDecorationMethods(args,cb,vid,param) {
   if ("decorationId" in args) {
     await axios({
       method : 'GET',
-      url : config.domainKey+'promoStandardDecorationMethod?method_id='+args.decorationId
+      url : config.serviceUrl+'/promoStandardDecorationMethod?method_id='+args.decorationId
     })
     .then(async function (response) {
         if(response.data.total>0)
@@ -182,7 +184,7 @@ async function checkDecorationIdExistInProduct(args,cb,vid,param) {
           
           await axios({
             method : 'POST',
-            url : config.domainKey+'promoStandardDecorationMethod',
+            url : config.serviceUrl+'/promoStandardDecorationMethod',
             data: methodList
           })
           .then(function (response) {
@@ -253,7 +255,7 @@ function getDecorationColorsFunction (args,cb) {
             let finalDecorationMethodArray= '';            
             axios({
               method : 'GET',
-              url : config.domainKey+'promoStandardLocation?location_id='+args.locationId
+              url : config.serviceUrl+'/promoStandardLocation?location_id='+args.locationId
             })
             .then(async function (response) {
                 // console.log("promoStandardLocation------------------------",response.data)
@@ -276,7 +278,7 @@ function getDecorationColorsFunction (args,cb) {
 
                   axios({
                     method : 'POST',
-                    url : config.domainKey+'promoStandardColors',
+                    url : config.serviceUrl+'/promoStandardColors',
                     data: colorList
                   })
                   .then(function (response) {
@@ -476,7 +478,7 @@ function getAvailableChargesFunction (args,cb) {
 
             axios({
               method : 'POST',
-              url : config.domainKey+'promoStandardCharges',
+              url : config.serviceUrl+'/promoStandardCharges',
               data: chargeList
             })
             .then(function (response) {
@@ -644,7 +646,7 @@ function getConfigurationAndPricingFunction (args,cb) {
                     for(let pos of position) {
                       await axios({
                         method : 'GET',
-                        url : config.domainKey+'promoStandardLocation' + '?location=' + pos
+                        url : config.serviceUrl+'/promoStandardLocation' + '?location=' + pos
                       }).then(async res => {
                         if (res.data.data.length > 0) {
 
@@ -654,7 +656,7 @@ function getConfigurationAndPricingFunction (args,cb) {
                           if (item.hasOwnProperty('setup_charge')) {
                             await axios({
                               method: 'GET',
-                              url: config.domainKey+'promoStandardCharges' + '?charge=Setup' 
+                              url: config.serviceUrl+'/promoStandardCharges' + '?charge=Setup' 
                             }).then(async respp => {
                               
                               let charge = item.setup_charge
@@ -682,7 +684,7 @@ function getConfigurationAndPricingFunction (args,cb) {
                               } else {
                                 await axios({
                                   method: 'POST',
-                                  url: config.domainKey+'promoStandardCharges',
+                                  url: config.serviceUrl+'/promoStandardCharges',
                                   data: [{ name: 'Setup' }]
                                 }).then(rpp => {
                                   ChargeArrayResult.push({
@@ -707,7 +709,7 @@ function getConfigurationAndPricingFunction (args,cb) {
                           if (item.hasOwnProperty('run_charge')) {
                             await axios({
                               method: 'GET',
-                              url: config.domainKey+'promoStandardCharges' + '?charge=Run' 
+                              url: config.serviceUrl+'/promoStandardCharges' + '?charge=Run' 
                             }).then(async respp => {
                               
                               let charge = item.run_charge
@@ -735,7 +737,7 @@ function getConfigurationAndPricingFunction (args,cb) {
                               } else {
                                 await axios({
                                   method: 'POST',
-                                  url: config.domainKey+'promoStandardCharges',
+                                  url: config.serviceUrl+'/promoStandardCharges',
                                   data: [{ name: 'Run' }]
                                 }).then(rpp => {
                                   ChargeArrayResult.push({
@@ -759,7 +761,7 @@ function getConfigurationAndPricingFunction (args,cb) {
 
                           await axios({
                             method: 'GET',
-                            url: config.domainKey+'promoStandardDecorationMethod' + '?name=' + item.imprint_method
+                            url: config.serviceUrl+'/promoStandardDecorationMethod' + '?name=' + item.imprint_method
                           }).then(async respp => {
                             if (respp.data.data.length > 0) {
                               DecorationArrayResult.push({
@@ -771,7 +773,7 @@ function getConfigurationAndPricingFunction (args,cb) {
                             } else {
                               await axios({
                                 method: 'POST',
-                                url: config.domainKey+'promoStandardDecorationMethod',
+                                url: config.serviceUrl+'/promoStandardDecorationMethod',
                                 data: [{ name: item.imprint_method }]
                               }).then(rpp => {
                                 DecorationArrayResult.push({
@@ -796,7 +798,7 @@ function getConfigurationAndPricingFunction (args,cb) {
                         } else {
                           await axios({
                             method: 'POST',
-                            url: config.domainKey+'promoStandardLocation',
+                            url: config.serviceUrl+'/promoStandardLocation',
                             data: [{location: pos}]
                           }).then(resp => {
                             // console.log('POST ::', resp.data[0].location_id)

@@ -1,0 +1,18 @@
+{
+  "host": "localhost",
+  "port": 3080,
+  "public": "../public/",
+  "paginate": {
+    "default": 10,
+    "max": 50
+  },
+  "rethinkdb": {
+    "db": "promostandard_service_api",
+    "servers": [
+      {
+        "host": "RDB_HOST",
+        "port": "RDB_PORT"
+      }
+    ]
+  }
+}
