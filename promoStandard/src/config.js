@@ -23,7 +23,8 @@ let config = {
   promoapi: 'promoapi'
 };
 if (process.env.serviceUrl != undefined) {
-  config.serviceUrl = process.env.serviceUrl;
+  // config.serviceUrl = process.env.serviceUrl;
+  config.serviceUrl = "https://api."+domainKey+"/promoStandard";
 }
 // console.log(config);
 module.exports = config;
