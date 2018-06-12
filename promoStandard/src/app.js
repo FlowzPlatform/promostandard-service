@@ -11,6 +11,22 @@ const config = require('./config');
 let app = express();
 
 
+//Load the library and specify options
+const replace = require('replace-in-file');
+  const options = {
+    files: './wsdl/**/*.wsdl',
+    from: new RegExp('http://localhost:'+config.port, 'g'),
+    to: "https://api."+config.domainKey+"/"+config.promoapi,
+  };
+
+  replace(options)
+    .then(changes => {
+      console.log('Modified files:', changes.join(', '));
+    })
+    .catch(error => {
+      console.error('Error occurred:', error);
+  });
+
 const ProductDataService = require("./productdataservice");
 const MediaContentService = require("./mediadataservice");
 const ProductPriceService = require("./productpriceservice");
