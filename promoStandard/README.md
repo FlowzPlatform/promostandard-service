@@ -2,8 +2,7 @@
 A simple SOAP server and client example using the node-soap package and express.
 
 # Introduction
-I'm not an expert in Javascript, nor Node, nor SOAP, but I had the necessity to create a SOAP server using Node.js. Since I found the documentation to be a 
-little poor, after the time I spent to make things somehow work, I want to share
+I'm not an expert in Javascript, nor Node, nor SOAP, but I had the necessity to create a SOAP server using Node.js. Since I found the documentation to be a little poor, after the time I spent to make things somehow work, I want to share
 what I did in case someone else needs this.
 
 This README will go through a super simple yet kinda comprihensive example to
