@@ -452,7 +452,7 @@ function getAvailableChargesFunction (args,cb) {
       if(data.vid) {
         // let body = {"_source":["sku"],"size":0,"aggs":{"imprint_data":{"nested":{"path" :"imprint_data"},"aggs":{"position":{"terms":{"field":"imprint_data.imprint_position.raw"}}}}}};
         // let body = {"query":{"match":{"sku":"68420"}},"_source":"imprint_data"};
-        let body = '';
+        let body = {};
         let param = config.customQueryRoute+'?country='+args.localizationCountry+'&language='+args.localizationLanguage;
         
         if ((args.localizationCountry == null) || (args.localizationLanguage == null)) {
@@ -482,7 +482,7 @@ function getAvailableChargesFunction (args,cb) {
               data: chargeList
             })
             .then(function (response) {
-                // console.log("response------------------------",response.data)
+                // console.log("resp.data.hits.hits------------------------",resp.data.hits.hits)
                 let chargeData = [];
                 if ("productId" in args) {
                   let charge = [];
@@ -658,13 +658,16 @@ function getConfigurationAndPricingFunction (args,cb) {
                               method: 'GET',
                               url: config.serviceUrl+'/promoStandardCharges' + '?charge=Setup' 
                             }).then(async respp => {
-                              
-                              let charge = item.setup_charge
+                              // console.log('item::==>', item);
+                              let charge = ''
                               let dcode = ''
-                              let str = charge.split('(');
-                              charge = str[0];
-                              dcode = str[1].replace(')', '');
-
+                              let str = [];
+                              if (item.setup_charge != '') {
+                                charge = item.setup_charge;
+                                str = charge.split('(');
+                                charge = str[0];
+                                dcode = str[1].replace(')', '');
+                              }
                               if (respp.data.data.length > 0) {
 
                                 ChargeArrayResult.push({

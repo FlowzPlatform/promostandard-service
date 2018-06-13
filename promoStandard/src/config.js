@@ -19,7 +19,7 @@ let config = {
   authroute: "https://api."+domainKey+"/pdmnew/promostandard-auth",
   mediaUrl: "https://api."+domainKey+"/",
   customQueryRoute: '/run/fullquery',
-  serviceUrl: 'http://localhost:3080,',
+  serviceUrl: 'http://localhost:3080',
   promoapi: 'promoapi'
 };
 if (process.env.serviceUrl != undefined) {
