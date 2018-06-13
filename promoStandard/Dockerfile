@@ -6,6 +6,8 @@ WORKDIR /usr/src/app/server
 
 RUN npm install
 
+RUN npm install --save replace-in-file
+
 EXPOSE 8000
 
 
