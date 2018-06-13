@@ -1,0 +1,92 @@
+sudo: required
+
+language: node
+
+services:
+  - docker
+
+branches:
+  only:
+  - master
+  - develop
+  - staging
+  - QA
+
+jobs:
+  include:
+    - stage: promostandard
+      script:
+      - 'if [ ${TRAVIS_BRANCH} = "master" ]; then
+            docker login -u="$DOCKER_USERNAME_FLOWZ" -p="$DOCKER_PASSWORD_FLOWZ";
+            docker build -t promostandard:latest ./promoStandard/;
+            docker images;
+            docker tag promostandard:latest $DOCKER_USERNAME_FLOWZ/promostandard:latest;
+            docker push $DOCKER_USERNAME_FLOWZ/promostandard:latest;
+        elif [ ${TRAVIS_BRANCH} = "develop" ]; then
+            docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
+            docker build -t promostandard:dev ./promoStandard/;
+            docker images;
+            docker tag promostandard:dev $DOCKER_USERNAME/promostandard:dev;
+            docker push $DOCKER_USERNAME/promostandard:dev;
+        elif [ ${TRAVIS_BRANCH} = "staging" ]; then
+            docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
+            docker build -t promostandard:$TRAVIS_BRANCH-$TRAVIS_BUILD_NUMBER ./promoStandard/;
+            docker tag promostandard:$TRAVIS_BRANCH-$TRAVIS_BUILD_NUMBER $DOCKER_USERNAME/promostandard:$TRAVIS_BRANCH-$TRAVIS_BUILD_NUMBER;
+            docker tag promostandard:$TRAVIS_BRANCH-$TRAVIS_BUILD_NUMBER $DOCKER_USERNAME/promostandard:staging;
+            docker images;
+            docker push $DOCKER_USERNAME/promostandard:$TRAVIS_BRANCH-$TRAVIS_BUILD_NUMBER;
+            docker push $DOCKER_USERNAME/promostandard:staging;
+        else
+            docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
+            docker build -t promostandard:qa ./promoStandard/;
+            docker images;
+            docker tag promostandard:qa $DOCKER_USERNAME/promostandard:qa;
+            docker push $DOCKER_USERNAME/promostandard:qa;
+        fi'
+    - stage: promostandard-feathers-service
+      script:
+      - 'if [ ${TRAVIS_BRANCH} = "master" ]; then
+            docker login -u="$DOCKER_USERNAME_FLOWZ" -p="$DOCKER_PASSWORD_FLOWZ";
+            docker build -t promostandard_feathers_service:latest ./Service/;
+            docker images;
+            docker tag promostandard_feathers_service:latest $DOCKER_USERNAME_FLOWZ/promostandard_feathers_service:latest;
+            docker push $DOCKER_USERNAME_FLOWZ/promostandard_feathers_service:latest;
+        elif [ ${TRAVIS_BRANCH} = "develop" ]; then
+            docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
+            docker build -t promostandard_feathers_service:dev ./Service/;
+            docker images;
+            docker tag promostandard_feathers_service:dev $DOCKER_USERNAME/promostandard_feathers_service:dev;
+            docker push $DOCKER_USERNAME/promostandard_feathers_service:dev;
+        elif [ ${TRAVIS_BRANCH} = "staging" ]; then
+            docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
+            docker build -t promostandard_feathers_service:$TRAVIS_BRANCH-$TRAVIS_BUILD_NUMBER ./Service/;
+            docker tag promostandard_feathers_service:$TRAVIS_BRANCH-$TRAVIS_BUILD_NUMBER $DOCKER_USERNAME/promostandard_feathers_service:$TRAVIS_BRANCH-$TRAVIS_BUILD_NUMBER;
+            docker tag promostandard_feathers_service:$TRAVIS_BRANCH-$TRAVIS_BUILD_NUMBER $DOCKER_USERNAME/promostandard_feathers_service:staging;
+            docker images;
+            docker push $DOCKER_USERNAME/promostandard_feathers_service:$TRAVIS_BRANCH-$TRAVIS_BUILD_NUMBER;
+            docker push $DOCKER_USERNAME/promostandard_feathers_service:staging;
+        else
+            docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
+            docker build -t promostandard_feathers_service:qa ./Service/;
+            docker images;
+            docker tag promostandard_feathers_service:qa $DOCKER_USERNAME/promostandard_feathers_service:qa;
+            docker push $DOCKER_USERNAME/promostandard_feathers_service:qa;
+        fi'
+    - stage: Upgrade Rancher Service
+      script:
+      - bash ./upgrade.sh
+    - stage: Finish Rancher Service
+      script:
+      - bash ./finish.sh
+
+notifications:
+  email:
+    recipients:
+      - arpitap@officebeacon.com
+      - kaushalm@officebrain.com
+      - anuj@officebrain.com
+      - naveeng@officebrain.com
+      - rbajaniya@officebrain.com
+      - chirag@officebrain.com
+    on_success: always
+    on_failure: always
