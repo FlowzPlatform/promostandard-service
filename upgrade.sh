@@ -15,6 +15,7 @@ then
     RANCHER_URL="$RANCHER_URL_MASTER";
     RDB_HOST="$RDB_HOST_MASTER";
     SERVICEURL:"$SERVICEURL_MASTER";
+    RDB_PORT="$RDB_PORT_MASTER";
   }
 elif [ "$TRAVIS_BRANCH" = "develop" ]
 then
@@ -33,6 +34,7 @@ then
       RANCHER_URL="$RANCHER_URL_DEVELOP";
       RDB_HOST="$RDB_HOST_DEVELOP";
       SERVICEURL="$SERVICEURL_DEVELOP";
+      RDB_PORT="$RDB_PORT_DEVELOP";
   }
 elif [ "$TRAVIS_BRANCH" = "staging" ]
 then
@@ -51,6 +53,7 @@ then
       RANCHER_URL="$RANCHER_URL_STAGING";
       RDB_HOST="$RDB_HOST_STAGING";
       SERVICEURL="$SERVICEURL_STAGING";
+      RDB_PORT="$RDB_PORT_STAGING";
   }
 else
   {
@@ -68,6 +71,7 @@ else
       RANCHER_URL="$RANCHER_URL_QA";
       RDB_HOST="$RDB_HOST_QA";
       SERVICEURL="$SERVICEURL_QA";
+      RDB_PORT="$RDB_PORT_QA";
   }
 fi
 
