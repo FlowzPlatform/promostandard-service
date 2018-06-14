@@ -18,7 +18,7 @@
 		<wsdl:part name="GetAvailableLocationsRequest" element="tns:GetAvailableLocationsRequest"/>
 	</wsdl:message>
 	<wsdl:message name="GetAvailableLocationsResponseMessage">
-		<wsdl:part name="GetAvailableLocationsResponse" element="tns:GetAvailableLocationsResponse"/>
+		<wsdl:part name="GetAvailableLocationsResponse" element="GetAvailableLocationsResponse"/>
 	</wsdl:message>
 	<wsdl:message name="GetDecorationColorsRequestMessage">
 		<wsdl:part name="GetDecorationColorsRequest" element="tns:GetDecorationColorsRequest"/>
