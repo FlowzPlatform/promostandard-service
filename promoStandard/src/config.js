@@ -17,7 +17,7 @@ let config = {
   domainKey: domainKey,
   pdmurl : "https://api."+domainKey+"/pdmnew/pdm",
   authroute: "https://api."+domainKey+"/pdmnew/promostandard-auth",
-  mediaUrl: "https://api."+domainKey+"/",
+  mediaUrl: "http://image.promoworld.ca/migration-api-hidden-new/web/images/",
   customQueryRoute: '/run/fullquery',
   serviceUrl: 'http://localhost:3080',
   promoapi: 'promoapi'
