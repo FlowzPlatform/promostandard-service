@@ -12,22 +12,22 @@
 		<wsdl:part name="GetMediaContentRequest" element="tns:GetMediaContentRequest"/>
 	</wsdl:message>
 	<wsdl:message name="GetMediaContentResponseMessage">
-		<wsdl:part name="GetMediaContentResponse" element="tns:GetMediaContentResponse"/>
+		<wsdl:part name="GetMediaContentResponse" element="GetMediaContentResponse"/>
 	</wsdl:message>
 	<wsdl:message name="GetMediaDateModifiedRequestMessage">
 		<wsdl:part name="parameter" element="tns:GetMediaDateModifiedRequest"/>
 	</wsdl:message>
 	<wsdl:message name="GetMediaDateModifiedResponseMessage">
-		<wsdl:part name="parameter" element="tns:GetMediaDateModifiedResponse"/>
+		<wsdl:part name="parameter" element="GetMediaDateModifiedResponse"/>
 	</wsdl:message>
 	<wsdl:portType name="MediaContentService">
 		<wsdl:operation name="getMediaContent">
 			<wsdl:input message="tns:GetMediaContentRequestMessage"/>
-			<wsdl:output message="tns:GetMediaContentResponseMessage"/>
+			<wsdl:output message="GetMediaContentResponseMessage"/>
 		</wsdl:operation>
 		<wsdl:operation name="getMediaDateModified">
 			<wsdl:input message="tns:GetMediaDateModifiedRequestMessage"/>
-			<wsdl:output message="tns:GetMediaDateModifiedResponseMessage"/>
+			<wsdl:output message="GetMediaDateModifiedResponseMessage"/>
 		</wsdl:operation>
 	</wsdl:portType>
 	<wsdl:binding name="MediaContentServiceBinding" type="tns:MediaContentService">

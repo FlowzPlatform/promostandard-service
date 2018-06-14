@@ -24,25 +24,25 @@
 		<wsdl:part name="GetDecorationColorsRequest" element="tns:GetDecorationColorsRequest"/>
 	</wsdl:message>
 	<wsdl:message name="GetDecorationColorsResponseMessage">
-		<wsdl:part name="GetDecorationColorsResponse" element="tns:GetDecorationColorsResponse"/>
+		<wsdl:part name="GetDecorationColorsResponse" element="GetDecorationColorsResponse"/>
 	</wsdl:message>
 	<wsdl:message name="GetFobPointsRequestMessage">
 		<wsdl:part name="GetFobPointsRequest" element="tns:GetFobPointsRequest"/>
 	</wsdl:message>
 	<wsdl:message name="GetFobPointsResponseMessage">
-		<wsdl:part name="GetFobPointsResponse" element="tns:GetFobPointsResponse"/>
+		<wsdl:part name="GetFobPointsResponse" element="GetFobPointsResponse"/>
 	</wsdl:message>
 	<wsdl:message name="GetAvailableChargesRequestMessage">
 		<wsdl:part name="GetAvailableChargesRequest" element="tns:GetAvailableChargesRequest"/>
 	</wsdl:message>
 	<wsdl:message name="GetAvailableChargesResponseMessage">
-		<wsdl:part name="GetAvailableChargesResponse" element="tns:GetAvailableChargesResponse"/>
+		<wsdl:part name="GetAvailableChargesResponse" element="GetAvailableChargesResponse"/>
 	</wsdl:message>
 	<wsdl:message name="GetConfigurationAndPricingRequestMessage">
 		<wsdl:part name="GetConfigurationAndPricingRequest" element="tns:GetConfigurationAndPricingRequest"/>
 	</wsdl:message>
 	<wsdl:message name="GetConfigurationAndPricingResponseMessage">
-		<wsdl:part name="GetConfigurationAndPricingResponse" element="tns:GetConfigurationAndPricingResponse"/>
+		<wsdl:part name="GetConfigurationAndPricingResponse" element="GetConfigurationAndPricingResponse"/>
 	</wsdl:message>
 	<wsdl:portType name="PricingAndConfigurationService">
 		<wsdl:operation name="getAvailableLocations">
