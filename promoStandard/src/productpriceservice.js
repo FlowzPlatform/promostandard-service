@@ -79,7 +79,7 @@ function getAvailableLocationsFunction (args,cb) {
                   
                   let result = {'AvailableLocation' :locationData}
                   cb({
-                    ':AvailableLocationArray':result
+                    'AvailableLocationArray':result
                   })
                 })
                 .catch(function (error) {
