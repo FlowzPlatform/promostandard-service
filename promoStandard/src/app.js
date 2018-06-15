@@ -52,5 +52,5 @@ app.listen(config.port, function () {
   soap.listen(app, config.productdata, ProductDataService, ProductDataServiceWSDL);
   soap.listen(app, config.mediacontent , MediaContentService, MediaDataServiceWSDL);
   soap.listen(app, config.pricingconfiguration , ProductPriceService, ProductPriceServiceWSDL);
-  console.log("Check http://localhost:" + config.port + config.pricingconfiguration +"?wsdl to see if the service is working");
+  // console.log("Check http://localhost:" + config.port + config.pricingconfiguration +"?wsdl to see if the service is working");
 });

@@ -58,7 +58,7 @@ function getAvailableLocationsFunction (args,cb) {
               }
   
               // let locationList = [{"location":"CSK"},{"location":"ff662"}];
-              console.log( config.serviceUrl+'/promoStandardLocation')
+              // console.log( config.serviceUrl+'/promoStandardLocation')
               axios({
                 method : 'POST',
                 url : config.serviceUrl+'/promoStandardLocation',
@@ -371,14 +371,14 @@ function getFobPointsFunction (args,cb) {
 
             if(data!=undefined){
               _.forEach(response.data.aggregations, function(fobIDBuckets) {
-                console.log(fobIDBuckets)
+                // console.log(fobIDBuckets)
                 if(fobIDBuckets){
                   _.forEach(fobIDBuckets.buckets, function(fobIDBucket) {
                       fobId = fobIDBucket.key
                       // console.log('fobIDBucket',fobId);
                     _.forEach(fobIDBucket.fobCity.buckets, function(fobCityBucket) {
                         fobCity = fobCityBucket.key;
-                        console.log('fobCityBucket',fobCity);
+                        // console.log('fobCityBucket',fobCity);
                       _.forEach(fobCityBucket.fob_state_code.buckets, function(fobStateCodeBucket) {
                           fobStateCode = fobStateCodeBucket.key;
                           // console.log('fobStateCodeBucket',fobStateCode);
@@ -814,7 +814,7 @@ function getConfigurationAndPricingFunction (args,cb) {
                       })
                     }
                   }
-                  console.log('LocationArray :: ', LocationArray);
+                  // console.log('LocationArray :: ', LocationArray);
                 }
 
                 let result = {

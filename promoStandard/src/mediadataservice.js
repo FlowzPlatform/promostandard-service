@@ -36,8 +36,8 @@ function getMediaContentFunction (args, cb) {
               'url': config.mediaUrl + data[0]._source.default_image,
               'ClassTypeArray' : {
                 'ClassType' : {
-                  'classTypeId' : '1006',
-                  'classTypeName' : 'The primary image'
+                  'classType' : '1006',
+                  'className' : 'The primary image'
                 }
               },
               'color': (data[0]._source.default_color) ? data[0]._source.default_color : '',
@@ -54,8 +54,8 @@ function getMediaContentFunction (args, cb) {
                     'url': config.mediaUrl + imageval.web_image,
                     'ClassTypeArray' : {
                       'ClassType' : {
-                        'classTypeId' : '1005',
-                        'classTypeName' : 'The shot is custom which does not fall into any specific type'
+                        'classType' : '1005',
+                        'className' : 'The shot is custom which does not fall into any specific type'
                       }
                     },
                     'color': (imageval.color) ? imageval.color : '',

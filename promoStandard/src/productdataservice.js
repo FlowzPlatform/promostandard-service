@@ -122,7 +122,7 @@ function getProductFunction (args,cb) {
         });  
       }
       else {
-        console.log('data',data);
+        // console.log('data',data);
         cb(commonFunction.validationError('105',data.error));
       }  
     });
@@ -150,7 +150,7 @@ function getProductSellableFunction(args, cb) {
       param = "?sku="+ args.productId + '&$limit=';
     }
     commonFunction.isAuthenticate(args).then(function(data){
-        console.log('data',data);
+        // console.log('data',data);
         if(data.vid) {
           asyncProductsCount(data.vid,param).then(function(response){
             let productCount = response.hits.total;
