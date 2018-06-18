@@ -31,6 +31,8 @@ function getAvailableLocationsFunction (args,cb) {
         else if ("productId" in args) {
           body.query={"match_phrase":{"sku":args.productId}}
         }
+        console.log("config.pdmurl",config.pdmurl);
+
         axios({
           method: 'POST',
           url: config.pdmurl + param,
@@ -38,76 +40,87 @@ function getAvailableLocationsFunction (args,cb) {
           data : body
         })
         .then(function (response) {
-          if(response.status === 200) {
-            // console.log(response.data.aggregations)
-            let data = response.data.aggregations;
-            
-            let getAvailableLocations = data.imprint_data.position.buckets[0].key;
-            let getAvailableLocationsArray = getAvailableLocations.split('|')
-            
-            // console.log("getAvailableLocationsArray",getAvailableLocationsArray)
-            // var obj = _.extend({ 'location': 0 }, getAvailableLocations.split('|'));
-            
-            let locationList = [];
-            let result = [];
-
-            if(getAvailableLocationsArray.length > 0)
-            {
-              for (var i = 0; i < getAvailableLocationsArray.length; i++){ 
-                locationList.push({'location':getAvailableLocationsArray[i]});
-              }
+          try {
+            console.log("response",response);
+            if(response.status === 200) {
+              // console.log(response.data.aggregations)
+              let data = response.data.aggregations;
+              
+              let getAvailableLocations = data.imprint_data.position.buckets[0].key;
+              let getAvailableLocationsArray = getAvailableLocations.split('|')
+              
+              // console.log("getAvailableLocationsArray",getAvailableLocationsArray)
+              // var obj = _.extend({ 'location': 0 }, getAvailableLocations.split('|'));
+              
+              let locationList = [];
+              let result = [];
   
-              // let locationList = [{"location":"CSK"},{"location":"ff662"}];
-              // console.log( config.serviceUrl+'/promoStandardLocation')
-              axios({
-                method : 'POST',
-                url : config.serviceUrl+'/promoStandardLocation',
-                data: locationList
-              })
-              .then(function (response) {
-                  let locationData = [];
-  
-                  for (var i = 0; i < response.data.length; i++){ 
-                    let locationList = {};
-                      
-                    locationList = { 
-                      'locationName':response.data[i].location,
-                      'locationId':response.data[i].location_id
-                    }
-                    locationData.push(locationList)
-                  }
-                  
-                  let result = {'AvailableLocation' :locationData}
-                  cb({
-                    'AvailableLocationArray':result
-                  })
+              if(getAvailableLocationsArray.length > 0)
+              {
+                for (var i = 0; i < getAvailableLocationsArray.length; i++){ 
+                  locationList.push({'location':getAvailableLocationsArray[i]});
+                }
+    
+                // let locationList = [{"location":"CSK"},{"location":"ff662"}];
+                // console.log( config.serviceUrl+'/promoStandardLocation')
+                axios({
+                  method : 'POST',
+                  url : config.serviceUrl+'/promoStandardLocation',
+                  data: locationList
                 })
-                .catch(function (error) {
-                  console.log("error",error)
-                });
+                .then(function (response) {
+                    let locationData = [];
+    
+                    for (var i = 0; i < response.data.length; i++){ 
+                      let locationList = {};
+                        
+                      locationList = { 
+                        'locationName':response.data[i].location,
+                        'locationId':response.data[i].location_id
+                      }
+                      locationData.push(locationList)
+                    }
+                    
+                    let result = {'AvailableLocation' :locationData}
+                    cb({
+                      'AvailableLocationArray':result
+                    })
+                  })
+                  .catch(function (error) {
+                    console.log("error",error)
+                  });
+              }
+              else{
+                cb({
+                  'AvailableLocationArray':result
+                })
+              }
             }
-            else{
-              cb({
-                'AvailableLocationArray':result
-              })
-            }
+          } catch (e) {
+            console.log('Location Error', e)
           }
         })
         .catch(function (error) {
+          console.log('Location err', error);
+          
           cb(commonFunction.validationError('500',error));
         });
       }
       else {
+        console.log('Location err123');
         cb(commonFunction.validationError('105',data.error));
       }
     });
   }
   else {
+    console.log('Location err1233333');
+    
     cb(commonFunction.validationError('110','Authentication Credentials required'));
   }  
 }
 
 async function getDecorationMethods(args,cb,vid,param) {
+  console.log('getDecorationMethods');
   var finalDecorationMethodArray = null;
 
   if ("decorationId" in args) {
@@ -155,6 +168,7 @@ async function getDecorationMethods(args,cb,vid,param) {
 }
 
 async function checkDecorationIdExistInProduct(args,cb,vid,param) {
+  console.log('checkDecorationIdExistInProduct');
   var finalDecorationMethodArray = '';
 
   let decorationMethodQuery = {"_source":["sku"],"size":0,"aggs":{"imprint_data":{"nested":{"path":"imprint_data"},"aggs":{"position":{"terms":{"field":"imprint_data.imprint_method.raw"}}}}}}
@@ -215,6 +229,7 @@ async function checkDecorationIdExistInProduct(args,cb,vid,param) {
 }
 
 function getDecorationColorsFunction (args,cb) {
+  console.log("getDecorationColorsFunction");
   if(args.id!=null && args.password!=null){ 
     commonFunction.isAuthenticate(args).then(function(data){ 
       if(data.vid) {
@@ -334,6 +349,7 @@ function getDecorationColorsFunction (args,cb) {
 
 
 function getFobPointsFunction (args,cb) {
+  console.log("getFobPointsFunction");
   if(args.id!=null && args.password!=null){ 
     commonFunction.isAuthenticate(args).then(function(data){ 
       if(data.vid) {
@@ -446,6 +462,7 @@ function getFobPointsFunction (args,cb) {
 }
   
 function getAvailableChargesFunction (args,cb) {
+  console.log("getAvailableChargesFunction");
   if(args.id!=null && args.password!=null){ 
     commonFunction.isAuthenticate(args).then(function(data){ 
       console.log("data.vid",data.vid)
@@ -546,6 +563,8 @@ function getAvailableChargesFunction (args,cb) {
 }
 
 function getConfigurationAndPricingFunction (args,cb) {
+  console.log("getConfigurationAndPricingFunction");
+  
   if(args.id!=null && args.password!=null){ 
     commonFunction.isAuthenticate(args).then(function(data){
       console.log('VID',data.vid) 
