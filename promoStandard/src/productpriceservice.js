@@ -45,10 +45,13 @@ function getAvailableLocationsFunction (args,cb) {
             if(response.status === 200) {
               // console.log(response.data.aggregations)
               let data = response.data.aggregations;
+              let getAvailableLocationsArray='';
               
-              let getAvailableLocations = data.imprint_data.position.buckets[0].key;
-              let getAvailableLocationsArray = getAvailableLocations.split('|')
-              
+              if(data.imprint_data.position.buckets.length > 0)
+              {
+                let getAvailableLocations = data.imprint_data.position.buckets[0].key;
+                getAvailableLocationsArray = getAvailableLocations.split('|')
+              }
               // console.log("getAvailableLocationsArray",getAvailableLocationsArray)
               // var obj = _.extend({ 'location': 0 }, getAvailableLocations.split('|'));
               
@@ -499,30 +502,32 @@ function getAvailableChargesFunction (args,cb) {
               data: chargeList
             })
             .then(function (response) {
-                // console.log("resp.data.hits.hits------------------------",resp.data.hits.hits)
+                console.log("resp.data.hits.hits------------------------",resp.data.hits)
                 let chargeData = [];
                 if ("productId" in args) {
                   let charge = [];
-                  for (let item of resp.data.hits.hits[0]._source.imprint_data) {
-                    if (item.hasOwnProperty('setup_charge')) {
-                      charge.push('Setup');
+                  if(resp.data.hits.total > 0)
+                  {
+                    for (let item of resp.data.hits.hits[0]._source.imprint_data) {
+                      if (item.hasOwnProperty('setup_charge')) {
+                        charge.push('Setup');
+                      }
+                      if (item.hasOwnProperty('run_charge')) {
+                        charge.push('Run');
+                      }
                     }
-                    if (item.hasOwnProperty('run_charge')) {
-                      charge.push('Run');
+                    charge = _.uniq(charge);
+
+                    for (let result of charge) {
+                      let finx = _.findIndex(response.data, {charge: result});
+                      chargeData.push({
+                        'chargeName':response.data[finx].charge,
+                        'chargeId':response.data[finx].charge_id,
+                        'chargeDescription':response.data[finx].chargeDescription,
+                        'chargeType':response.data[finx].chargeType
+                      }) 
                     }
                   }
-                  charge = _.uniq(charge);
-
-                  for (let result of charge) {
-                    let finx = _.findIndex(response.data, {charge: result});
-                    chargeData.push({
-                      'chargeName':response.data[finx].charge,
-                      'chargeId':response.data[finx].charge_id,
-                      'chargeDescription':response.data[finx].chargeDescription,
-                      'chargeType':response.data[finx].chargeType
-                    }) 
-                  }
-
                 } else {
                   for (let i = 0; i < response.data.length; i++){ 
                     let chargeList = {};
