@@ -41,12 +41,17 @@ function getAvailableLocationsFunction (args,cb) {
         })
         .then(function (response) {
           try {
-            console.log("response",response);
+            // console.log("response",response);
             if(response.status === 200) {
-              // console.log(response.data.aggregations)
+              console.log(response.data)
               let data = response.data.aggregations;
               let getAvailableLocationsArray='';
               
+              console.log('data.imprint_data.doc_count',data.imprint_data.doc_count);
+              if(data.imprint_data.doc_count == 0)
+              {
+                cb(commonFunction.validationError('400','productID not found'));
+              }
               if(data.imprint_data.position.buckets.length > 0)
               {
                 let getAvailableLocations = data.imprint_data.position.buckets[0].key;
@@ -337,7 +342,7 @@ function getDecorationColorsFunction (args,cb) {
           }
         })
         .catch(function (error) {
-          cb(commonFunction.validationError('500',error));
+          cb(commonFunction.validationError('400','productID not found'));
         });
       }
       else {
@@ -388,6 +393,12 @@ function getFobPointsFunction (args,cb) {
             let FobPointArrayList = [];
             let ProductSkuArray = '';
 
+            console.log('response.data',response.data);
+            if(response.data.aggregations.fobID.buckets.length == 0)
+            {
+              cb(commonFunction.validationError('400','productID not found'));
+            }
+              
             if(data!=undefined){
               _.forEach(response.data.aggregations, function(fobIDBuckets) {
                 // console.log(fobIDBuckets)
@@ -527,6 +538,9 @@ function getAvailableChargesFunction (args,cb) {
                         'chargeType':response.data[finx].chargeType
                       }) 
                     }
+                  }
+                  else{
+                    cb(commonFunction.validationError('400','productID not found'));
                   }
                 } else {
                   for (let i = 0; i < response.data.length; i++){ 
@@ -862,7 +876,7 @@ function getConfigurationAndPricingFunction (args,cb) {
             }
           })
           .catch(function (error) {
-            cb(commonFunction.validationError('500',error));
+            cb(commonFunction.validationError('400','productID not found'));
           });
         }
       }
