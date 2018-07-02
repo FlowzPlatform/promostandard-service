@@ -118,7 +118,7 @@ function getProductFunction (args,cb) {
           }
         })
         .catch(function (error) {
-          cb(commonFunction.validationError('500',error));
+          cb(commonFunction.validationError('130','Product Id not found'));
         });  
       }
       else {
@@ -163,13 +163,20 @@ function getProductSellableFunction(args, cb) {
                 if(response.status == 200) {
                 //  console.log('response', response.data);
                   let data = response.data.hits.hits;
-                  let result = _.map(data, function(o) { return { "productId": o._source.sku, 'partId': ''}; });
-                  let ProductSellableArrayList = {
-                    ProductSellable: result
+                //  console.log('data', data.length);
+                  if(data.length>0)
+                  {
+                    let result = _.map(data, function(o) { return { "productId": o._source.sku, 'partId': ''}; });
+                    let ProductSellableArrayList = {
+                      ProductSellable: result
+                    }
+                    cb({
+                      ProductSellableArray:ProductSellableArrayList
+                    })
                   }
-                  cb({
-                    ProductSellableArray:ProductSellableArrayList
-                  })
+                  else{
+                    cb(commonFunction.validationError('130','Product Id not found'));
+                  }
                 }
                 else {
                   cb(commonFunction.validationError(response.status,response.data.error));

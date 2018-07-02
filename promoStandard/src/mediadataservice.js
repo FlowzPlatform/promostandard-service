@@ -78,7 +78,7 @@ function getMediaContentFunction (args, cb) {
           }
         })
         .catch(function (error) {
-          cb(commonFunction.validationError('500',error));
+          cb(commonFunction.validationError('130','Product Id not found'));
         });
       }
       else {
